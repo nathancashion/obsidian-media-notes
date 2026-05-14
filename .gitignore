@@ -8,9 +8,8 @@
 # npm
 node_modules
 
-# Don't include the compiled main.js file in the repo.
-# They should be uploaded to GitHub releases instead.
-main.js
+# Keep the compiled plugin entry in this fork so BRAT can install from the
+# repository branch as well as from GitHub releases.
 
 # Exclude sourcemaps
 *.map
