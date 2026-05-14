@@ -26600,6 +26600,13 @@ var convertTimestampToSeconds = (timestamp) => {
 var getMediaLinkFromFrontmatter = (frontmatter) => {
   return frontmatter["media_link"] || frontmatter["media"];
 };
+var parseRawFrontmatter = (rawFrontmatter) => {
+  var _a;
+  if (typeof rawFrontmatter !== "string" || !rawFrontmatter.trim()) {
+    return {};
+  }
+  return (_a = (0, import_obsidian.parseYaml)(rawFrontmatter)) != null ? _a : {};
+};
 var getTimestampParam = (mediaLink) => {
   try {
     return new URL(mediaLink).searchParams.get("t");
@@ -26646,7 +26653,8 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
     };
     this.renderPlayerInView = (markdownView) => {
       var _a, _b, _c, _d, _e;
-      const frontmatter = (_a = (0, import_obsidian.parseYaml)(markdownView.rawFrontmatter)) != null ? _a : {};
+      const frontmatter = markdownView.file && ((_a = this.app.metadataCache.getFileCache(markdownView.file)) == null ? void 0 : _a.frontmatter) || // @ts-ignore TS2339 rawFrontmatter is an internal compatibility fallback.
+      parseRawFrontmatter(markdownView.rawFrontmatter);
       if (frontmatter && getMediaLinkFromFrontmatter(frontmatter)) {
         const container = markdownView.containerEl;
         const existingPlayerComponent = container.querySelector(
@@ -26750,8 +26758,16 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
     await this.loadSettings();
     this.players = {};
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+      var _a;
       const view = leaf.view;
-      this.renderPlayerInView(view);
+      try {
+        this.renderPlayerInView(view);
+      } catch (error) {
+        console.error("Media Notes AI failed to render a media player", {
+          error,
+          file: (_a = view.file) == null ? void 0 : _a.path
+        });
+      }
     });
     this.addCommand({
       id: "insert-media-timestamp",

@@ -101,6 +101,16 @@ const getMediaLinkFromFrontmatter = (frontmatter: Record<string, string>) => {
 	return frontmatter["media_link"] || frontmatter["media"];
 };
 
+const parseRawFrontmatter = (
+	rawFrontmatter: unknown
+): Record<string, string> => {
+	if (typeof rawFrontmatter !== "string" || !rawFrontmatter.trim()) {
+		return {};
+	}
+
+	return (parseYaml(rawFrontmatter) ?? {}) as Record<string, string>;
+};
+
 const getTimestampParam = (mediaLink: string) => {
 	try {
 		return new URL(mediaLink).searchParams.get("t");
@@ -153,9 +163,12 @@ export default class MediaNotesPlugin extends Plugin {
 	};
 
 	renderPlayerInView = (markdownView: MarkdownView) => {
-		// @ts-ignore TS2339
-		const frontmatter = (parseYaml(markdownView.rawFrontmatter) ??
-			{}) as Record<string, string>;
+		const frontmatter =
+			(markdownView.file &&
+				this.app.metadataCache.getFileCache(markdownView.file)
+					?.frontmatter) ||
+			// @ts-ignore TS2339 rawFrontmatter is an internal compatibility fallback.
+			parseRawFrontmatter(markdownView.rawFrontmatter);
 		// if there's a media_link
 		if (frontmatter && getMediaLinkFromFrontmatter(frontmatter)) {
 			const container = markdownView.containerEl;
@@ -285,7 +298,14 @@ export default class MediaNotesPlugin extends Plugin {
 
 		this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
 			const view = leaf.view as MarkdownView;
-			this.renderPlayerInView(view);
+			try {
+				this.renderPlayerInView(view);
+			} catch (error) {
+				console.error("Media Notes AI failed to render a media player", {
+					error,
+					file: view.file?.path,
+				});
+			}
 		});
 
 		// This adds a simple command that can be triggered anywhere
