@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState, createContext } from "react";
 import * as React from "react";
 import { MediaNotesPluginSettings } from "./main";
-import { EventEmitter } from "events";
+import { EventEmitter } from "./event-emitter";
 
 // Define the type for the context
 interface ContextType {

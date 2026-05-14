@@ -14,7 +14,7 @@ import {
 import * as React from "react";
 import YouTube from "react-youtube";
 import { createClickHandlerPlugin } from "./viewPlugin";
-import { EventEmitter } from "events";
+import { EventEmitter } from "./event-emitter";
 
 export interface MediaNotesPluginSettings {
 	seekSeconds: number;
@@ -99,6 +99,14 @@ const convertTimestampToSeconds = (timestamp: string) => {
 
 const getMediaLinkFromFrontmatter = (frontmatter: Record<string, string>) => {
 	return frontmatter["media_link"] || frontmatter["media"];
+};
+
+const getTimestampParam = (mediaLink: string) => {
+	try {
+		return new URL(mediaLink).searchParams.get("t");
+	} catch {
+		return null;
+	}
 };
 
 export default class MediaNotesPlugin extends Plugin {
@@ -197,7 +205,7 @@ export default class MediaNotesPlugin extends Plugin {
 			if (!markdownSourceview) return;
 			markdownSourceview.prepend(div);
 
-			const mediaLink = getMediaLinkFromFrontmatter(frontmatter);
+			const mediaLink = String(getMediaLinkFromFrontmatter(frontmatter));
 			ensureYouTubeReferrerPolicy();
 			const ytRef = React.createRef<YouTube>();
 			const eventEmitter = new EventEmitter();
@@ -212,10 +220,7 @@ export default class MediaNotesPlugin extends Plugin {
 				(mediaId && this.settings.mediaData[mediaId]) ||
 				this.settings.mediaData[mediaLink];
 
-			// extract the url param ts from the media link
-			const mediaLinkUrl = new URL(mediaLink);
-			const mediaLinkParams = new URLSearchParams(mediaLinkUrl.search);
-			const mediaLinkTs = mediaLinkParams.get("t");
+			const mediaLinkTs = getTimestampParam(mediaLink);
 			const initSeconds =
 				mediaData?.lastTimestampSeconds ?? mediaLinkTs ?? 0;
 
