@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS: MediaNotesPluginSettings = {
 	seekSeconds: 10,
 	verticalPlayerHeight: 40,
 	horizontalPlayerWidth: 40,
-	defaultSplitMode: "Vertical",
+	defaultSplitMode: "Horizontal",
 	pauseOnTimestampInsert: false,
 	displayProgressBar: true,
 	displayTimestamp: true,
@@ -143,6 +143,35 @@ export default class MediaNotesPlugin extends Plugin {
 		return player;
 	};
 
+	applyPlayerLayout = (
+		container: HTMLElement,
+		playerElement: HTMLElement
+	) => {
+		playerElement.style.background = this.settings.backgroundColor;
+		if (this.settings.defaultSplitMode === "Vertical") {
+			playerElement.style.width =
+				this.settings.horizontalPlayerWidth + "%";
+			playerElement.style.height = "100%";
+			container.classList.add(mediaParentContainerVerticalClass);
+		} else {
+			playerElement.style.width = "100%";
+			playerElement.style.height =
+				this.settings.verticalPlayerHeight + "%";
+			container.classList.remove(mediaParentContainerVerticalClass);
+		}
+	};
+
+	updatePlayerLayouts = () => {
+		this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+			const view = leaf.view as MarkdownView;
+			const playerElement = view.containerEl.querySelector<HTMLElement>(
+				"." + mediaNotesContainerClass
+			);
+			if (!playerElement) return;
+			this.applyPlayerLayout(view.containerEl, playerElement);
+		});
+	};
+
 	// saves the timestamp of the player into settings, by media link
 	savePlayerTimestamp = (playerId: string) => {
 		const player = this.players[playerId];
@@ -203,17 +232,10 @@ export default class MediaNotesPlugin extends Plugin {
 			div.className = mediaNotesContainerClass;
 			// name is important - matches data-player-id in getActiveViewYoutubePlayer
 			div.dataset.playerId = uniqueId;
-			div.style.background = this.settings.backgroundColor;
 			const markdownSourceview = container.querySelector(
 				".markdown-source-view"
 			);
-			if (this.settings.defaultSplitMode === "Vertical") {
-				div.style.width = this.settings.horizontalPlayerWidth + "%";
-				container.classList.add(mediaParentContainerVerticalClass);
-			} else {
-				container.classList.remove(mediaParentContainerVerticalClass);
-				div.style.height = this.settings.verticalPlayerHeight + "%";
-			}
+			this.applyPlayerLayout(container, div);
 
 			if (!markdownSourceview) return;
 			markdownSourceview.prepend(div);
@@ -399,22 +421,18 @@ export default class MediaNotesPlugin extends Plugin {
 						mediaParentContainerVerticalClass
 					)
 				) {
-					if (existingPlayer) {
-						existingPlayer.style.height =
-							this.settings.verticalPlayerHeight + "%";
-						existingPlayer.style.width = "100%";
-					}
+					this.settings.defaultSplitMode = "Horizontal";
 					container.classList.remove(
 						mediaParentContainerVerticalClass
 					);
 				} else {
-					if (existingPlayer) {
-						existingPlayer.style.width =
-							this.settings.horizontalPlayerWidth + "%";
-						existingPlayer.style.height = "100%";
-					}
+					this.settings.defaultSplitMode = "Vertical";
 					container.classList.add(mediaParentContainerVerticalClass);
 				}
+				if (existingPlayer) {
+					this.applyPlayerLayout(container, existingPlayer);
+				}
+				await this.saveSettings();
 			},
 		});
 
@@ -591,6 +609,7 @@ export default class MediaNotesPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.updatePlayerLayouts();
 		Object.values(this.players).forEach((player) => {
 			player.eventEmitter.emit("settingsUpdated", this.settings);
 		});

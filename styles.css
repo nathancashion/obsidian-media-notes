@@ -24,12 +24,13 @@ If your plugin does not need CSS, delete this file.
 	justify-content: center;
 	height: 100%;
 	width: 100%;
+	overflow: hidden;
 }
 
 .media-container {
 	height: 100%;
-	width: auto;
-	max-width: 100%;
+	width: 100%;
+	max-width: min(100%, calc(100vh * 16 / 9));
 	position: relative;
 	display: block;
 	margin: 0 auto;

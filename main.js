@@ -26547,7 +26547,7 @@ var DEFAULT_SETTINGS = {
   seekSeconds: 10,
   verticalPlayerHeight: 40,
   horizontalPlayerWidth: 40,
-  defaultSplitMode: "Vertical",
+  defaultSplitMode: "Horizontal",
   pauseOnTimestampInsert: false,
   displayProgressBar: true,
   displayTimestamp: true,
@@ -26632,6 +26632,29 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         return null;
       return player;
     };
+    this.applyPlayerLayout = (container, playerElement) => {
+      playerElement.style.background = this.settings.backgroundColor;
+      if (this.settings.defaultSplitMode === "Vertical") {
+        playerElement.style.width = this.settings.horizontalPlayerWidth + "%";
+        playerElement.style.height = "100%";
+        container.classList.add(mediaParentContainerVerticalClass);
+      } else {
+        playerElement.style.width = "100%";
+        playerElement.style.height = this.settings.verticalPlayerHeight + "%";
+        container.classList.remove(mediaParentContainerVerticalClass);
+      }
+    };
+    this.updatePlayerLayouts = () => {
+      this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+        const view = leaf.view;
+        const playerElement = view.containerEl.querySelector(
+          "." + mediaNotesContainerClass
+        );
+        if (!playerElement)
+          return;
+        this.applyPlayerLayout(view.containerEl, playerElement);
+      });
+    };
     // saves the timestamp of the player into settings, by media link
     this.savePlayerTimestamp = (playerId) => {
       var _a, _b;
@@ -26674,17 +26697,10 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         const uniqueId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         div.className = mediaNotesContainerClass;
         div.dataset.playerId = uniqueId;
-        div.style.background = this.settings.backgroundColor;
         const markdownSourceview = container.querySelector(
           ".markdown-source-view"
         );
-        if (this.settings.defaultSplitMode === "Vertical") {
-          div.style.width = this.settings.horizontalPlayerWidth + "%";
-          container.classList.add(mediaParentContainerVerticalClass);
-        } else {
-          container.classList.remove(mediaParentContainerVerticalClass);
-          div.style.height = this.settings.verticalPlayerHeight + "%";
-        }
+        this.applyPlayerLayout(container, div);
         if (!markdownSourceview)
           return;
         markdownSourceview.prepend(div);
@@ -26853,20 +26869,18 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         if (container.classList.contains(
           mediaParentContainerVerticalClass
         )) {
-          if (existingPlayer) {
-            existingPlayer.style.height = this.settings.verticalPlayerHeight + "%";
-            existingPlayer.style.width = "100%";
-          }
+          this.settings.defaultSplitMode = "Horizontal";
           container.classList.remove(
             mediaParentContainerVerticalClass
           );
         } else {
-          if (existingPlayer) {
-            existingPlayer.style.width = this.settings.horizontalPlayerWidth + "%";
-            existingPlayer.style.height = "100%";
-          }
+          this.settings.defaultSplitMode = "Vertical";
           container.classList.add(mediaParentContainerVerticalClass);
         }
+        if (existingPlayer) {
+          this.applyPlayerLayout(container, existingPlayer);
+        }
+        await this.saveSettings();
       }
     });
     this.addCommand({
@@ -27005,6 +27019,7 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
   }
   async saveSettings() {
     await this.saveData(this.settings);
+    this.updatePlayerLayouts();
     Object.values(this.players).forEach((player) => {
       player.eventEmitter.emit("settingsUpdated", this.settings);
     });
