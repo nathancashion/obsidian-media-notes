@@ -12,6 +12,8 @@ This fork is based on the original [jemstelos/obsidian-media-notes](https://gith
 
 Recent maintenance changes in this fork, including YouTube embed playback fixes, short-link support, and responsive viewer layout updates, were made with AI-agent assistance. In plain terms, these changes were vibe coded and then built/tested before release.
 
+This fork uses the Obsidian plugin id `media-notes-ai` and display name `Media Notes AI`. The id is intentionally different from the upstream community plugin id, `media-notes`, so BRAT and Obsidian can install this fork without enabling the original community plugin instead.
+
 -   **One-Click Save** - Instantly save from YouTube to Obsidian media note
 -   **Media Hotkeys**:- Pause and skip forward/back while staying in your note
 -   **Timestamps** - Insert clickable timestamp links to jump back to key moments
@@ -79,6 +81,8 @@ Clicking links that have the timestamp format (`HH:MM:SS`) will jump the playbac
 
 <a href="https://obsidian.md/plugins?id=media-notes"><img src="https://img.shields.io/badge/Install_now-6c31e3?logo=obsidian"></a><br>
 Search "Media Notes" in the Obsidian Community Plugins library to find this plugin and add it.
+
+For this fork, install with BRAT using `https://github.com/nathancashion/obsidian-media-notes`. In Obsidian, enable `Media Notes AI`, not `Media Notes`, if both versions are installed.
 
 ## Roadmap
 
