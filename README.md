@@ -6,6 +6,12 @@ A best-in-class video note-taking experience in Obsidian.
 
 Seamlessly capture and replay insights from YouTube videos, podcasts, and lectures into your knowledge base.
 
+## Fork Notice
+
+This fork is based on the original [jemstelos/obsidian-media-notes](https://github.com/jemstelos/obsidian-media-notes) repository. Credit for the plugin concept, initial implementation, and published Obsidian Community Plugin belongs to the original author.
+
+Recent maintenance changes in this fork, including YouTube embed playback fixes, short-link support, and responsive viewer layout updates, were made with AI-agent assistance. In plain terms, these changes were vibe coded and then built/tested before release.
+
 -   **One-Click Save** - Instantly save from YouTube to Obsidian media note
 -   **Media Hotkeys**:- Pause and skip forward/back while staying in your note
 -   **Timestamps** - Insert clickable timestamp links to jump back to key moments
