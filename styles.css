@@ -19,23 +19,21 @@ If your plugin does not need CSS, delete this file.
 }
 
 .media-top-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	height: 100%;
 	width: 100%;
 }
 
 .media-container {
 	height: 100%;
-	width: 100%;
+	width: auto;
+	max-width: 100%;
 	position: relative;
-	max-width: var(--file-line-width);
 	display: block;
 	margin: 0 auto;
-}
-
-@media screen and (min-width: 2100px) {
-	.media-container {
-		max-width: 950px;
-	}
+	aspect-ratio: 16 / 9;
 }
 
 .media-container-parent-vertical .markdown-source-view {

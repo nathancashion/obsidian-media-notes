@@ -4,9 +4,29 @@ import * as React from "react";
 import YouTube, { YouTubeEvent, YouTubeProps } from "react-youtube";
 import { CSSTransition } from "react-transition-group";
 
+const youtubeIframeSelector = "iframe.youtube-iframe";
+const youtubeIframeAllow =
+	"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+
 export const getVideoId = (url: string) => {
-	const urlParams = new URLSearchParams(new URL(url).search);
-	return urlParams.get("v");
+	try {
+		const parsedUrl = new URL(url);
+		if (parsedUrl.hostname.endsWith("youtu.be")) {
+			return parsedUrl.pathname.split("/").filter(Boolean)[0] ?? null;
+		}
+
+		if (parsedUrl.pathname.startsWith("/embed/")) {
+			return parsedUrl.pathname.split("/").filter(Boolean)[1] ?? null;
+		}
+
+		if (parsedUrl.pathname.startsWith("/shorts/")) {
+			return parsedUrl.pathname.split("/").filter(Boolean)[1] ?? null;
+		}
+
+		return parsedUrl.searchParams.get("v");
+	} catch {
+		return null;
+	}
 };
 
 export const MediaFrame: React.FC<{
@@ -15,13 +35,17 @@ export const MediaFrame: React.FC<{
 	initSeconds: number;
 	autoplay?: boolean;
 }> = ({ mediaLink, ytRef, initSeconds, autoplay }) => {
+	const containerRef = React.useRef<HTMLDivElement>(null);
 	const videoId = getVideoId(mediaLink);
 	if (!videoId) return null;
 	const opts: YouTubeProps["opts"] = {
+		width: "100%",
+		height: "100%",
 		playerVars: {
 			// this needs to be not undefined to work
 			start: initSeconds,
 			autoplay: autoplay ? 1 : 0,
+			origin: window.location.origin,
 		},
 	};
 	// const intervalRef = React.useRef<number | undefined>(undefined);
@@ -72,7 +96,28 @@ export const MediaFrame: React.FC<{
 	};
 
 	React.useEffect(() => {
+		const setIframeAttributes = () => {
+			const iframe =
+				containerRef.current?.querySelector<HTMLIFrameElement>(
+					youtubeIframeSelector
+				);
+			if (!iframe) return;
+			iframe.referrerPolicy = "strict-origin-when-cross-origin";
+			iframe.allow = youtubeIframeAllow;
+			iframe.allowFullscreen = true;
+		};
+
+		setIframeAttributes();
+		const observer = new MutationObserver(setIframeAttributes);
+		if (containerRef.current) {
+			observer.observe(containerRef.current, {
+				childList: true,
+				subtree: true,
+			});
+		}
+
 		return () => {
+			observer.disconnect();
 			if (intervalRef.current) {
 				window.clearInterval(intervalRef.current);
 			}
@@ -94,7 +139,7 @@ export const MediaFrame: React.FC<{
 	const speedRef = React.useRef(null);
 
 	return (
-		<div className="media-top-container">
+		<div ref={containerRef} className="media-top-container">
 			<div className="media-container">
 				{/* @ts-ignore TS2607 */}
 				<YouTube

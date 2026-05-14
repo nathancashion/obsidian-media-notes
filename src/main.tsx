@@ -54,6 +54,20 @@ const DEFAULT_SETTINGS: MediaNotesPluginSettings = {
 
 const mediaNotesContainerClass = "media-notes-container";
 const mediaParentContainerVerticalClass = "media-container-parent-vertical";
+const mediaNotesReferrerMetaId = "media-notes-referrer-policy";
+
+const ensureYouTubeReferrerPolicy = () => {
+	let meta = document.head.querySelector<HTMLMetaElement>(
+		`#${mediaNotesReferrerMetaId}`
+	);
+	if (!meta) {
+		meta = document.createElement("meta");
+		meta.id = mediaNotesReferrerMetaId;
+		meta.name = "referrer";
+		document.head.appendChild(meta);
+	}
+	meta.content = "strict-origin-when-cross-origin";
+};
 
 export const formatTimestamp = (timestamp: number | undefined) => {
 	if (timestamp === undefined) return "";
@@ -184,6 +198,7 @@ export default class MediaNotesPlugin extends Plugin {
 			markdownSourceview.prepend(div);
 
 			const mediaLink = getMediaLinkFromFrontmatter(frontmatter);
+			ensureYouTubeReferrerPolicy();
 			const ytRef = React.createRef<YouTube>();
 			const eventEmitter = new EventEmitter();
 			this.players[uniqueId] = {
