@@ -1,11 +1,11 @@
 import { useContext, useEffect, useState, createContext } from "react";
 import * as React from "react";
-import { MediaNotesPluginSettings } from "./main";
+import { YouTubeNotesPluginSettings } from "./main";
 import { EventEmitter } from "./event-emitter";
 
 // Define the type for the context
 interface ContextType {
-	settings: MediaNotesPluginSettings | null;
+	settings: YouTubeNotesPluginSettings | null;
 	showTimestamp: boolean;
 	showSeekForward: boolean;
 	showSeekBackwards: boolean;
@@ -20,10 +20,10 @@ export const AppContext = createContext<ContextType | null>(null);
 
 export const AppProvider: React.FC<{
 	children: React.ReactNode;
-	settingsParam: MediaNotesPluginSettings | null;
+	settingsParam: YouTubeNotesPluginSettings | null;
 	eventEmitter: EventEmitter;
 }> = ({ children, settingsParam, eventEmitter }) => {
-	const [settings, setSettings] = useState<MediaNotesPluginSettings | null>(
+	const [settings, setSettings] = useState<YouTubeNotesPluginSettings | null>(
 		settingsParam
 	);
 
@@ -37,7 +37,7 @@ export const AppProvider: React.FC<{
 
 	useEffect(() => {
 		// Listen for the 'settingsUpdated' event
-		const updateSettings = (newSettings: MediaNotesPluginSettings) => {
+		const updateSettings = (newSettings: YouTubeNotesPluginSettings) => {
 			setSettings({ ...newSettings });
 		};
 		eventEmitter.on("settingsUpdated", updateSettings);

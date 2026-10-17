@@ -1,110 +1,123 @@
-# Obsidian Media Notes
+# YouTube Notes
 
-<a href="https://obsidian.md/plugins?id=media-notes"><img src="https://img.shields.io/badge/media_notes-v1.3-6c31e3?logo=obsidian&style=for-the-badge"></a><br>
+Take notes alongside YouTube videos in Obsidian, with playback controls, clickable timestamps, and saved playback positions. Requires **Obsidian 1.13.0 or newer** on desktop.
 
-A best-in-class video note-taking experience in Obsidian.
+YouTube Notes is an updated fork of [Media Notes](https://github.com/jemstelos/obsidian-media-notes), created by [jemstelos](https://github.com/jemstelos). The original concept and implementation are theirs. This fork updates that work for current Obsidian versions; it is not a new implementation or an official Obsidian or YouTube product.
 
-Seamlessly capture and replay insights from YouTube videos, podcasts, and lectures into your knowledge base.
+## Features
 
-## Fork Notice
+- Keep an embedded video beside or above your notes in editing view.
+- Play, pause, rewind, fast-forward, and change playback speed without leaving the editor.
+- Insert timestamp links and click them to seek within the note's video.
+- Resume videos from saved playback positions.
+- Create notes from the browser using a bookmarklet or an Obsidian Web Clipper template.
+- Find all 11 preferences through Obsidian's built-in settings search.
 
-This fork is based on the original [jemstelos/obsidian-media-notes](https://github.com/jemstelos/obsidian-media-notes) repository. Credit for the plugin concept, initial implementation, and published Obsidian Community Plugin belongs to the original author.
+![Original Media Notes demonstration, courtesy of jemstelos](images/media-notes.gif)
 
-Recent maintenance changes in this fork, including YouTube embed playback fixes, short-link support, and responsive viewer layout updates, were made with AI-agent assistance. In plain terms, these changes were vibe coded and then built/tested before release.
+## Installation
 
-This fork uses the Obsidian plugin id `media-notes-ai` and display name `Media Notes AI`. The id is intentionally different from the upstream community plugin id, `media-notes`, so BRAT and Obsidian can install this fork without enabling the original community plugin instead.
+This fork is distributed through [BRAT](https://github.com/TfTHacker/obsidian42-brat) and [GitHub releases](https://github.com/nathancashion/obsidian-media-notes/releases). It is **not currently listed in the community plugin directory**.
 
--   **One-Click Save** - Instantly save from YouTube to Obsidian media note
--   **Media Hotkeys**:- Pause and skip forward/back while staying in your note
--   **Timestamps** - Insert clickable timestamp links to jump back to key moments
--   **Resume Playback** - Resume videos from where you left off
+### BRAT
 
-<div style="margin: 0 auto;">
-  <img src="images/media-notes.gif">
-</div>
+1. Install and enable BRAT in Obsidian.
+2. Use BRAT's command to add a beta plugin and enter `https://github.com/nathancashion/obsidian-media-notes`.
+3. Enable **YouTube Notes** in Community plugins.
 
-## Create Media Note
+The plugin ID is `youtube-notes`. The repository URL remains unchanged.
 
-Create media notes instantly from a Youtube page using the provided bookmarklet (instructions [here](https://obsidian-media-notes.netlify.app/)).
+### Manual installation
 
-This lets you click a button in your browser bar and automatically create a note for the YouTube video you're watching while continuing playback from the current location.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/nathancashion/obsidian-media-notes/releases/latest).
+2. Create a `youtube-notes` folder inside your vault's plugin directory (normally `.obsidian/plugins/`).
+3. Copy those three files into it, reload Obsidian, and enable **YouTube Notes**.
 
-You can turn any Obsidian note into a media note by using the `Add file property` command, then typing in `media_link` and pasting the URL.
+## Create a note
 
-## Media Controls
+### Add a media property manually
 
-Setup hotkeys to allow you to control the playback of the media you're taking notes on without leaving your note.
+Add a `media_link` property containing a YouTube video URL, then open the note in editing view. For example:
 
-Hotkeys can be setup however you like through the Hotkeys settings page.
-Suggestion hotkeys for Mac users that mirror YouTube's hotkey layout:
-⌃J - Jump Backward
-⌃K - Play/Pause
-⌃L - Jump Forward
-⌃I - Insert Timestamp
-
-## Inserting Timestamps
-
-Timestamps can be inserted for the current time in the video with a hotkey.
-
-Clicking links that have the timestamp format (`HH:MM:SS`) will jump the playback time for the note's media player to that timestamp.
-
-## Settings
-
-Customize the viewing and note-taking experience with settings:
-
--   Vertical/Horizontal Player Mode - this sets the default viewing behavior, you can still toggle the mode for any given note
--   Player Size
--   Progress Bar Visibility + Color
--   Timestamp offset - you typically want to make a note on a point that was made a few seconds in the past
--   Timestamp template - you may want to insert timestamps with a space at the end or the beginning, depending on your workflow
-
-## Format
-
-A media note is just a markdown note with a `media_link` [property](https://help.obsidian.md/Editing+and+formatting/Properties) that contains a supported URL format. For example:
-
-```
+```markdown
 ---
 media_link: https://www.youtube.com/watch?v=MFXWY8TqSWw
 ---
 
-[02:01]() - A useful insight, ties to my thought that [[Connections are key to creativity.]]
+## Notes
+
+[02:01]() - A useful insight.
 ```
 
-Media notes display an embedded player fixed in the note pane, so that the note content can be scrolled while viewing the player.
+The player supports standard watch URLs, `youtu.be` links, Shorts URLs, and embed URLs. Playback depends on YouTube allowing the video to be embedded. Reading mode and non-YouTube media providers are not currently supported.
 
-Timestamps are inserted into the note as markdown links with a timestamp format:
-`[3:05:53]()`
+### Bookmarklet: capture the current playback position
 
-Clicking links that have the timestamp format (`HH:MM:SS`) will jump the playback time for the note's media player to that timestamp.
+1. Create a browser bookmark named **YouTube Notes**.
+2. Copy the entire line below into the bookmark's URL/location field, including `javascript:`. You can also copy it from [`bookmarklet.js`](bookmarklet.js) using GitHub's **Raw** view.
+3. Open a YouTube video and click the bookmark. Allow the browser to open Obsidian and confirm the new-note action if prompted.
 
-## Installation
+<!-- bookmarklet:start -->
+```javascript
+javascript:(function()%7Bfunction%20u(n%3Dwindow%2Cs%3Ddocument)%7Bconst%20e%3Dnew%20URL(n.location.href)%2Cl%3De.hostname%3D%3D%3D%22youtube.com%22%7C%7Ce.hostname.endsWith(%22.youtube.com%22)%2Cc%3D%5B%22youtu.be%22%2C%22www.youtu.be%22%5D.includes(e.hostname)%3Bif(!%5B%22https%3A%22%2C%22http%3A%22%5D.includes(e.protocol)%7C%7C!l%26%26!c)return%3Bconst%20a%3De.pathname.split(%22%2F%22).filter(Boolean)%2Cr%3Dc%3Fa%5B0%5D%3Ae.searchParams.get(%22v%22)%7C%7C(%5B%22shorts%22%2C%22embed%22%2C%22live%22%5D.includes(a%5B0%5D)%3Fa%5B1%5D%3Anull)%3Bif(!r)return%3Bconst%20o%3Dnew%20URL(%22https%3A%2F%2Fwww.youtube.com%2Fwatch%22)%3Bo.searchParams.set(%22v%22%2Cr)%3Bconst%20t%3Ds.querySelector(%22video%22)%2Ci%3Dt%3D%3Dnull%3Fvoid%200%3At.currentTime%3BNumber.isFinite(i)%26%26i%3E%3D0%3Fo.searchParams.set(%22t%22%2CString(Math.floor(i)))%3A%2F%5E%5Cd%2B%24%2F.test(e.searchParams.get(%22t%22)%7C%7C%22%22)%26%26o.searchParams.set(%22t%22%2Ce.searchParams.get(%22t%22))%2Ct%26%26!t.paused%26%26t.pause()%3Bconst%20d%3Dm(s.title.replace(%2F%20-%20YouTube%24%2F%2C%22%22))%2Ch%3D%60---%0Amedia_link%3A%20%60%2BJSON.stringify(o.toString())%2B%60%0A---%0A%23Video%20%23YouTube%0A%0A%23%23%20Notes%0A%0A%60%3Bn.open(%22obsidian%3A%2F%2Fnew%3Fname%3D%22%2BencodeURIComponent(d%2B%22.md%22)%2B%22%26content%3D%22%2BencodeURIComponent(h))%7Dconst%20m%3Dn%3D%3E%22Video.%20%22%2B(n.replace(%2F%5B%3A%2F%5C%5C%5E%7C%23%5B%5C%5D*%3F%22%3C%3E%5D%2Fg%2C%22.%22).replace(%2F%5Cs%2B%2Fg%2C%22%20%22).trim().replace(%2F%5B.%20%5D%2B%24%2F%2C%22%22)%7C%7C%22YouTube%20video%22)%3Bu()%7D)()%3B
+```
+<!-- bookmarklet:end -->
 
-This fork requires Obsidian 1.13.0 or newer. Its settings are available in Obsidian's built-in settings search.
+The bookmarklet pauses a playing video, captures its current time when a video element is available, and creates a note with a `media_link` property, tags, and a Notes section. It converts supported video pages to a standard watch URL and removes unrelated query parameters. Filenames start with `Video. ` and replace characters that cannot be used in note names.
 
-<a href="https://obsidian.md/plugins?id=media-notes"><img src="https://img.shields.io/badge/Install_now-6c31e3?logo=obsidian"></a><br>
-Search "Media Notes" in the Obsidian Community Plugins library to find this plugin and add it.
+Without a video element, it can still create the note and retain an existing numeric `t` URL parameter. For videos you have already watched in Obsidian, an existing saved playback position takes precedence over the timestamp in the URL.
 
-For this fork, install with BRAT using `https://github.com/nathancashion/obsidian-media-notes`. In Obsidian, enable `Media Notes AI`, not `Media Notes`, if both versions are installed.
+For a draggable bookmark, download this repository and open [`dist/index.html`](dist/index.html) in your browser. The [original bookmarklet page](https://obsidian-media-notes.netlify.app/) belongs to jemstelos; this fork does not update that site.
 
-## Roadmap
+### Obsidian Web Clipper: capture page content
 
--   [x] Speed controls
--   [x] Pause when inserting timestamp
--   [ ] Support jumping to timestamp links using keyboard shortcuts (e.g alt+enter)
--   [ ] Support for jumping to timestamp link via https://github.com/mrjackphil/obsidian-jump-to-link
--   [ ] Drag to resize media player frame
--   [ ] Hotkey to toggle focus onto video and use YouTube hotkeys
--   [ ] Support for other media content providers
+1. Install [Obsidian Web Clipper](https://obsidian.md/clipper).
+2. Download [`YT-notes-webclipper.json`](YT-notes-webclipper.json) using GitHub's **Download raw file** button, or use the attached file in the latest release.
+3. Open Web Clipper settings, select a template, and click **Import**, or drag the JSON file into the template area. See the [official import instructions](https://help.obsidian.md/web-clipper/templates).
+4. Select **YouTube Notes**, choose your destination vault, and adjust the default `YouTube` folder if needed.
+5. Open a YouTube video page and save the note. If another template takes precedence, select **YouTube Notes** manually.
 
-If you'd like to provide feedback or suggestions for improvements, please use this [form](https://forms.gle/6DK61u5XMfAKwwwp9).
+The template uses the page title as the note name. It saves the page URL in `media_link` and `source`, adds a title property and an empty optional `published` date, and includes space for notes and clipped page content under a Description heading.
 
-Recent Updates
+**Unlike the bookmarklet, Web Clipper does not pause the video or capture its current playback position.** It saves the page URL as-is, including a timestamp only if one is already in that URL. Its URL triggers select the template; they do not convert URLs or guarantee that a particular page contains an embeddable video.
 
--   Improve bookmarklet to pause YouTube video and resume from the same spot in Obsidian
--   Support newlines and YouTube url in timestamp templates
+The template matches the contribution submitted in [upstream PR #50](https://github.com/jemstelos/obsidian-media-notes/pull/50), except that this fork uses the display name YouTube Notes.
 
-## Support
+## Controls and timestamps
 
-If you receive value from this plugin and would like to support the work, please consider making a donation!
+Assign hotkeys under **Settings → Hotkeys** by searching for **YouTube Notes**. No hotkeys are assigned by default.
 
-<a href="https://www.buymeacoffee.com/jemstelos"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=❤️&slug=jemstelos&button_colour=5F7FFF&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" /></a>
+Available commands are Insert Timestamp, Play/Pause, Rewind, Fast Forward, Speed up, Slow down, and Toggle horizontal/vertical split. Keep a media note's editor active when using them.
+
+Suggested macOS bindings are Control-J for rewind, Control-K for play/pause, Control-L for fast-forward, and Control-I for inserting a timestamp. Choose alternatives if these conflict with your other shortcuts.
+
+Timestamp links such as `[02:01]()` or `[1:02:01]()` seek the current note's player when clicked in editing view. The default insertion template is `[{ts}]({link})` followed by a newline:
+
+- `{ts}` inserts the formatted timestamp.
+- `{link}` inserts a timestamped YouTube URL.
+- Literal `\n` and actual line breaks are supported in the template.
+
+## Settings
+
+Search for a preference such as **timestamp**, **progress bar**, or **split view** in Obsidian's settings search, or open **Settings → YouTube Notes**.
+
+Configure the default split orientation, player height/width, rewind/fast-forward interval, timestamp offset and template, background color, progress-bar visibility and color, timestamp visibility, and whether insertion pauses playback. Existing notes remain ordinary Markdown files with a `media_link` property.
+
+## Network use and privacy
+
+Playback requires an internet connection. The plugin embeds the YouTube player and loads YouTube's iframe API; YouTube and its Google services receive the requests required for playback and may use cookies or collect data under [Google's privacy policy](https://policies.google.com/privacy). Embedding and sign-in restrictions imposed by YouTube still apply.
+
+The plugin itself adds no telemetry, requires no API key, and provides no AI functionality. Notes stay in your vault. Preferences, video URLs, and saved playback positions are stored in the plugin's local `data.json` file and may be synced if you sync plugin data. The bookmarklet sends the captured title and URL directly to Obsidian through an `obsidian://new` URI.
+
+## Credits and project status
+
+- **Original creator:** [jemstelos](https://github.com/jemstelos).
+- **Original project:** [Media Notes](https://github.com/jemstelos/obsidian-media-notes), including the concept, initial plugin, demonstration above, and [bookmarklet workflow](https://obsidian-media-notes.netlify.app/).
+- **Fork maintenance:** [Nathan Cashion](https://github.com/nathancashion), updating the original work for Obsidian 1.13.0+. Maintenance changes were made with AI-agent assistance and checked with tests and builds.
+- **License:** [MIT](LICENSE); original copyright and license notices are retained.
+
+Maintenance work has also been offered upstream in [PR #49 (runtime compatibility)](https://github.com/jemstelos/obsidian-media-notes/pull/49), [PR #50 (Web Clipper)](https://github.com/jemstelos/obsidian-media-notes/pull/50), and [PR #51 (searchable settings)](https://github.com/jemstelos/obsidian-media-notes/pull/51).
+
+Any separate community-directory submission remains pending fulfillment of Obsidian's [fork-policy requirements](https://docs.obsidian.md/community-directory/developer-policies). Renaming this fork does not imply approval from the original author.
+
+Report issues with this fork in [its issue tracker](https://github.com/nathancashion/obsidian-media-notes/issues). To support the original creator, visit [jemstelos's support page](https://www.buymeacoffee.com/jemstelos).

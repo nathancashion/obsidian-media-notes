@@ -1,13 +1,13 @@
 import { App, PluginSettingTab, SettingDefinitionItem } from "obsidian";
-import type MediaNotesPlugin from "./main";
-import type { MediaNotesPluginSettings } from "./main";
+import type YouTubeNotesPlugin from "./main";
+import type { YouTubeNotesPluginSettings } from "./main";
 
-type SettingKey = Exclude<keyof MediaNotesPluginSettings, "mediaData">;
+type SettingKey = Exclude<keyof YouTubeNotesPluginSettings, "mediaData">;
 
 export class SettingsTab extends PluginSettingTab {
-	plugin: MediaNotesPlugin;
+	plugin: YouTubeNotesPlugin;
 
-	constructor(app: App, plugin: MediaNotesPlugin) {
+	constructor(app: App, plugin: YouTubeNotesPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

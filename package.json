@@ -1,18 +1,19 @@
 {
-	"name": "media-notes-ai-plugin",
-	"version": "1.3.7",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "youtube-notes",
+	"version": "1.3.8",
+	"description": "Take notes alongside YouTube videos with playback controls and clickable timestamps.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"test": "jest",
-		"bookmarklet": "bun ./src/convert-bookmarklet.ts",
+		"bookmarklet": "node ./src/convert-bookmarklet.mjs",
+		"bookmarklet:check": "node ./src/convert-bookmarklet.mjs --check",
 		"bookmarklet-page": "open dist/index.html",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "Nathan Cashion",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",

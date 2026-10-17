@@ -25036,7 +25036,7 @@ var require_dist = __commonJS({
 // src/main.tsx
 var main_exports = {};
 __export(main_exports, {
-  default: () => MediaNotesPlugin,
+  default: () => YouTubeNotesPlugin,
   formatTimestamp: () => formatTimestamp
 });
 module.exports = __toCommonJS(main_exports);
@@ -26704,7 +26704,7 @@ var getTimestampParam = (mediaLink) => {
     return null;
   }
 };
-var MediaNotesPlugin = class extends import_obsidian2.Plugin {
+var YouTubeNotesPlugin = class extends import_obsidian2.Plugin {
   constructor() {
     super(...arguments);
     this.saveQueue = Promise.resolve();
@@ -26766,7 +26766,7 @@ var MediaNotesPlugin = class extends import_obsidian2.Plugin {
         };
         await this.saveSettings();
       } catch (error) {
-        console.error("Media Notes AI failed to save playback position", error);
+        console.error("YouTube Notes failed to save playback position", error);
       }
     };
     this.removePlayer = (playerId) => {
@@ -26884,7 +26884,7 @@ var MediaNotesPlugin = class extends import_obsidian2.Plugin {
       try {
         this.renderPlayerInView(view);
       } catch (error) {
-        console.error("Media Notes AI failed to render a media player", {
+        console.error("YouTube Notes failed to render a media player", {
           error,
           file: (_a = view.file) == null ? void 0 : _a.path
         });

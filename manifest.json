@@ -1,10 +1,10 @@
 {
-	"id": "media-notes-ai",
-	"name": "Media Notes AI",
-	"version": "1.3.7",
+	"id": "youtube-notes",
+	"name": "YouTube Notes",
+	"version": "1.3.8",
 	"minAppVersion": "1.13.0",
-	"description": "Take notes on YouTube videos and podcasts with media controls and timestamps.",
-	"author": "Nathan Cashion, forked from jemstelos",
+	"description": "Take notes alongside YouTube videos with playback controls and clickable timestamps.",
+	"author": "Nathan Cashion, original plugin by jemstelos",
 	"authorUrl": "https://github.com/nathancashion/obsidian-media-notes",
 	"fundingUrl": "https://www.buymeacoffee.com/jemstelos",
 	"isDesktopOnly": true

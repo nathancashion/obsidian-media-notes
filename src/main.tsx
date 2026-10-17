@@ -14,7 +14,7 @@ import { createClickHandlerPlugin } from "./viewPlugin";
 import { EventEmitter } from "./event-emitter";
 import { SettingsTab } from "./settings";
 
-export interface MediaNotesPluginSettings {
+export interface YouTubeNotesPluginSettings {
 	seekSeconds: number;
 	verticalPlayerHeight: number;
 	horizontalPlayerWidth: number;
@@ -35,7 +35,7 @@ export interface MediaNotesPluginSettings {
 	};
 }
 
-const DEFAULT_SETTINGS: MediaNotesPluginSettings = {
+const DEFAULT_SETTINGS: YouTubeNotesPluginSettings = {
 	seekSeconds: 10,
 	verticalPlayerHeight: 40,
 	horizontalPlayerWidth: 40,
@@ -117,8 +117,8 @@ const getTimestampParam = (mediaLink: string) => {
 	}
 };
 
-export default class MediaNotesPlugin extends Plugin {
-	settings: MediaNotesPluginSettings;
+export default class YouTubeNotesPlugin extends Plugin {
+	settings: YouTubeNotesPluginSettings;
 	private saveQueue: Promise<void> = Promise.resolve();
 
 	players: {
@@ -192,7 +192,7 @@ export default class MediaNotesPlugin extends Plugin {
 			};
 			await this.saveSettings();
 		} catch (error) {
-			console.error("Media Notes AI failed to save playback position", error);
+			console.error("YouTube Notes failed to save playback position", error);
 		}
 	};
 
@@ -339,7 +339,7 @@ export default class MediaNotesPlugin extends Plugin {
 			try {
 				this.renderPlayerInView(view);
 			} catch (error) {
-				console.error("Media Notes AI failed to render a media player", {
+				console.error("YouTube Notes failed to render a media player", {
 					error,
 					file: view.file?.path,
 				});

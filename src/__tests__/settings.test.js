@@ -13,12 +13,12 @@ jest.mock("react-dom/client", () => ({
 	createRoot: jest.fn(() => ({ render: jest.fn(), unmount: jest.fn() })),
 }));
 
-const MediaNotesPlugin = require("../main").default;
+const YouTubeNotesPlugin = require("../main").default;
 const { SettingsTab } = require("../settings");
 const { EventEmitter } = require("../event-emitter");
 
 const createPlugin = async () => {
-	const plugin = new MediaNotesPlugin({
+	const plugin = new YouTubeNotesPlugin({
 		workspace: { getLeavesOfType: () => [] },
 	});
 	plugin.loadData = jest.fn().mockResolvedValue(null);

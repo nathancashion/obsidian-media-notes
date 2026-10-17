@@ -3,81 +3,31 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Obsidian Media Notes Plugin Instructions</title>
+		<title>YouTube Notes bookmarklet</title>
 		<style>
-			body {
-				display: flex;
-				justify-content: center;
-				height: 100vh;
-				font-family: Arial, sans-serif;
-				background: #f1f5f9;
-				color: #1f2937;
-				a,
-				a:visited {
-					color: #1d4ed8;
-				}
-				line-height: 1.6;
-			}
-			.container {
-				padding-top: 50px;
-			}
-			h2 {
-				font-weight: bold;
-			}
+			body { margin: 0; font-family: system-ui, sans-serif; background: #f1f5f9; color: #1f2937; line-height: 1.6; }
+			main { max-width: 48rem; margin: auto; padding: 2rem; }
+			a { color: #1d4ed8; }
+			#bookmarklet { display: inline-block; padding: 0.75rem 1rem; border: 1px solid currentColor; border-radius: 0.5rem; }
 		</style>
 	</head>
 	<body>
-		<div class="container">
-			<h2>Obsidian Media Notes Plugin</h2>
-			<p>Instructions for setting up the bookmarklet workflow:</p>
+		<main>
+			<h1>YouTube Notes</h1>
+			<p>Create a note from a YouTube video in Obsidian 1.13.0 or newer.</p>
 			<ol>
-				<li>
-					Drag this bookmarklet link (<a
-						href="javascript:(function(){%2F*%20global%20window%2C%20document%20*%2F%0A%0Afunction%20createMediaNote()%20%7B%0A%09var%20url%20%3D%20window.location.href%3B%0A%09if%20(url.includes(%22youtube.com%22))%20%7B%0A%09%09var%20videoId%20%3D%20new%20URLSearchParams(window.location.search).get(%22v%22)%3B%0A%09%09if%20(videoId)%20%7B%0A%09%09%09var%20videoElement%20%3D%20document.querySelector(%22video%22)%3B%0A%09%09%09var%20status%20%3D%20videoElement.paused%20%3F%20%22paused%22%20%3A%20%22playing%22%3B%0A%09%09%09if%20(status%20%3D%3D%3D%20%22playing%22)%20%7B%0A%09%09%09%09videoElement.pause()%3B%0A%09%09%09%7D%0A%09%09%09var%20timestamp%20%3D%20videoElement.currentTime%3B%0A%0A%09%09%09var%20urlObj%20%3D%20new%20URL(url)%3B%0A%09%09%09if%20(timestamp)%20%7B%0A%09%09%09%09%2F%2F%20add%20t%20parameter%20to%20the%20url%2C%20and%20replace%20if%20exists%0A%09%09%09%09urlObj.searchParams.set(%22t%22%2C%20Math.floor(timestamp))%3B%0A%09%09%09%7D%0A%0A%09%09%09var%20title%20%3D%20makeObsidianFriendly(document.title)%3B%0A%09%09%09title%20%3D%20title.replace(%22%20-%20YouTube%22%2C%20%22%22)%3B%0A%09%09%09var%20encodedTitle%20%3D%20encodeURIComponent(title)%20%2B%20%22.md%22%3B%0A%09%09%09var%20content%20%3D%20encodeURIComponent(%0A%09%09%09%09%22---%5Cnmedia_link%3A%20%22%20%2B%20urlObj%20%2B%20%22%5Cn---%5Cn%23Video%22%0A%09%09%09)%3B%0A%09%09%09window.open(%0A%09%09%09%09%22obsidian%3A%2F%2Fnew%3Fname%3D%22%20%2B%20encodedTitle%20%2B%20%22%26content%3D%22%20%2B%20content%0A%09%09%09)%3B%0A%09%09%7D%0A%09%7D%0A%7D%0A%0Aconst%20makeObsidianFriendly%20%3D%20(title)%20%3D%3E%20%7B%0A%09var%20replacedTitle%20%3D%20%22Video.%20%22%20%2B%20title.replace(%2F%5B%3A%2F%5C%5C%5E%7C%23%5D%2Fg%2C%20%22.%22)%3B%0A%09return%20replacedTitle%3B%0A%7D%3B%0A%0A
-							createMediaNote()}())"
-						>Media Note v1.2</a
-					>) to your browser bookmark bar
-				</li>
-				<li>
-					Open up a YouTube
-					<a
-						target="_blank"
-						href="https://www.youtube.com/watch?v=3ipUgBVFNtU"
-						>video</a
-					>
-				</li>
-				<li>
-					Click on the new bookmarklet (allow it to call Obsidian)
-				</li>
+				<li>Install and enable YouTube Notes in Obsidian.</li>
+				<li>Drag the link below to your browser's bookmarks bar.</li>
+				<li>Open a YouTube video, then click the saved bookmark. Allow the browser to open Obsidian.</li>
 			</ol>
-			Now you can click this bookmarklet while on any YouTube video <br />
-			to create a media note in Obsidian.
+			<!-- bookmarklet:start -->
+<a id="bookmarklet" href="javascript:(function()%7Bfunction%20u(n%3Dwindow%2Cs%3Ddocument)%7Bconst%20e%3Dnew%20URL(n.location.href)%2Cl%3De.hostname%3D%3D%3D%22youtube.com%22%7C%7Ce.hostname.endsWith(%22.youtube.com%22)%2Cc%3D%5B%22youtu.be%22%2C%22www.youtu.be%22%5D.includes(e.hostname)%3Bif(!%5B%22https%3A%22%2C%22http%3A%22%5D.includes(e.protocol)%7C%7C!l%26%26!c)return%3Bconst%20a%3De.pathname.split(%22%2F%22).filter(Boolean)%2Cr%3Dc%3Fa%5B0%5D%3Ae.searchParams.get(%22v%22)%7C%7C(%5B%22shorts%22%2C%22embed%22%2C%22live%22%5D.includes(a%5B0%5D)%3Fa%5B1%5D%3Anull)%3Bif(!r)return%3Bconst%20o%3Dnew%20URL(%22https%3A%2F%2Fwww.youtube.com%2Fwatch%22)%3Bo.searchParams.set(%22v%22%2Cr)%3Bconst%20t%3Ds.querySelector(%22video%22)%2Ci%3Dt%3D%3Dnull%3Fvoid%200%3At.currentTime%3BNumber.isFinite(i)%26%26i%3E%3D0%3Fo.searchParams.set(%22t%22%2CString(Math.floor(i)))%3A%2F%5E%5Cd%2B%24%2F.test(e.searchParams.get(%22t%22)%7C%7C%22%22)%26%26o.searchParams.set(%22t%22%2Ce.searchParams.get(%22t%22))%2Ct%26%26!t.paused%26%26t.pause()%3Bconst%20d%3Dm(s.title.replace(%2F%20-%20YouTube%24%2F%2C%22%22))%2Ch%3D%60---%0Amedia_link%3A%20%60%2BJSON.stringify(o.toString())%2B%60%0A---%0A%23Video%20%23YouTube%0A%0A%23%23%20Notes%0A%0A%60%3Bn.open(%22obsidian%3A%2F%2Fnew%3Fname%3D%22%2BencodeURIComponent(d%2B%22.md%22)%2B%22%26content%3D%22%2BencodeURIComponent(h))%7Dconst%20m%3Dn%3D%3E%22Video.%20%22%2B(n.replace(%2F%5B%3A%2F%5C%5C%5E%7C%23%5B%5C%5D*%3F%22%3C%3E%5D%2Fg%2C%22.%22).replace(%2F%5Cs%2B%2Fg%2C%22%20%22).trim().replace(%2F%5B.%20%5D%2B%24%2F%2C%22%22)%7C%7C%22YouTube%20video%22)%3Bu()%7D)()%3B">YouTube Notes</a>
+<!-- bookmarklet:end -->
+			<p>The bookmarklet pauses playback, captures the current time when available, and creates a note with a media_link property. An existing saved position in Obsidian takes precedence when reopening a video.</p>
+			<p>Prefer Web Clipper? Import <a href="../YT-notes-webclipper.json" download>the YouTube Notes template</a>. It saves page content and the URL, not the current playback time.</p>
 			<hr />
-			<p>
-				I hope this plugin provides you value in your learning.
-				<br />
-				If you'd like to support the work, I gratefully accept donations
-				<a target="_blank" href="https://www.buymeacoffee.com/jemstelos"
-					>here</a
-				>.
-				<br />
-				If you're interested, you can learn more about
-				<a
-					href="https://jems.ai/Obsidian-Media-Notes-Plugin?src=bookmarklet"
-					>why</a
-				>
-				I created this tool.
-			</p>
-			<div>
-				<a href="https://github.com/jemstelos/obsidian-media-notes"
-					>Github repository</a
-				>
-				<br />
-				<a
-					href="https://github.com/jemstelos/obsidian-media-notes/blob/main/dist/index.html"
-					>Source code for this page</a
-				>
-			</div>
-		</div>
+			<p>This is an updated fork of <a href="https://github.com/jemstelos/obsidian-media-notes">Media Notes</a>, created by <a href="https://github.com/jemstelos">jemstelos</a>. Credit for the original concept, plugin, and bookmarklet workflow belongs to them.</p>
+			<p><a href="https://github.com/nathancashion/obsidian-media-notes">Fork repository and documentation</a> · <a href="https://obsidian-media-notes.netlify.app/">Original bookmarklet page</a> · <a href="https://www.buymeacoffee.com/jemstelos">Support the original creator</a></p>
+		</main>
 	</body>
 </html>
