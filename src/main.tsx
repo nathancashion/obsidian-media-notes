@@ -1,13 +1,10 @@
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import { MediaFrame, getVideoId } from "./components/media-frame";
 import { AppProvider } from "./app-context";
 import {
-	App,
 	Editor,
 	MarkdownView,
 	Plugin,
-	PluginSettingTab,
-	Setting,
 	View,
 	parseYaml,
 } from "obsidian";
@@ -15,6 +12,7 @@ import * as React from "react";
 import YouTube from "react-youtube";
 import { createClickHandlerPlugin } from "./viewPlugin";
 import { EventEmitter } from "./event-emitter";
+import { SettingsTab } from "./settings";
 
 export interface MediaNotesPluginSettings {
 	seekSeconds: number;
@@ -121,14 +119,18 @@ const getTimestampParam = (mediaLink: string) => {
 
 export default class MediaNotesPlugin extends Plugin {
 	settings: MediaNotesPluginSettings;
+	private saveQueue: Promise<void> = Promise.resolve();
 
 	players: {
 		[id: string]: {
 			ytRef: React.RefObject<YouTube>;
 			mediaLink: string;
 			eventEmitter: EventEmitter;
+			root: Root;
+			container: HTMLElement;
+			viewContainer: HTMLElement;
 		};
-	};
+	} = {};
 
 	getActiveViewYoutubePlayer = (view: View) => {
 		// const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -173,22 +175,36 @@ export default class MediaNotesPlugin extends Plugin {
 	};
 
 	// saves the timestamp of the player into settings, by media link
-	savePlayerTimestamp = (playerId: string) => {
+	savePlayerTimestamp = async (playerId: string) => {
 		const player = this.players[playerId];
 		if (!player) return;
-		player.ytRef.current?.internalPlayer
-			?.getCurrentTime()
-			.then((timestamp: number) => {
-				const mediaId = getVideoId(player.mediaLink);
-				if (!mediaId) return;
-				this.settings.mediaData[mediaId] = {
-					mediaLink: player.mediaLink,
-					lastUpdated: new Date().toISOString(),
-					lastTimestampSeconds: timestamp,
-				};
-				this.saveSettings();
-				this.loadSettings();
-			});
+		try {
+			const timestamp =
+				await player.ytRef.current?.internalPlayer?.getCurrentTime();
+			const mediaId = getVideoId(player.mediaLink);
+			if (!mediaId || timestamp === undefined || !Number.isFinite(timestamp)) {
+				return;
+			}
+			this.settings.mediaData[mediaId] = {
+				mediaLink: player.mediaLink,
+				lastUpdated: new Date().toISOString(),
+				lastTimestampSeconds: timestamp,
+			};
+			await this.saveSettings();
+		} catch (error) {
+			console.error("Media Notes AI failed to save playback position", error);
+		}
+	};
+
+	removePlayer = (playerId: string) => {
+		const player = this.players[playerId];
+		if (!player) return;
+		// Request the timestamp before unmounting destroys the YouTube player.
+		void this.savePlayerTimestamp(playerId);
+		player.root.unmount();
+		player.viewContainer.classList.remove(mediaParentContainerVerticalClass);
+		player.container.remove();
+		delete this.players[playerId];
 	};
 
 	renderPlayerInView = (markdownView: MarkdownView) => {
@@ -219,9 +235,8 @@ export default class MediaNotesPlugin extends Plugin {
 					return;
 				}
 				// remove the existing player
+				this.removePlayer(playerId);
 				existingPlayerComponent.remove();
-				this.savePlayerTimestamp(playerId);
-				delete this.players[playerId];
 			}
 
 			const div = document.createElement("div");
@@ -244,10 +259,14 @@ export default class MediaNotesPlugin extends Plugin {
 			ensureYouTubeReferrerPolicy();
 			const ytRef = React.createRef<YouTube>();
 			const eventEmitter = new EventEmitter();
+			const root = createRoot(div);
 			this.players[uniqueId] = {
 				ytRef,
 				mediaLink: mediaLink,
 				eventEmitter,
+				root,
+				container: div,
+				viewContainer: container,
 			};
 
 			const mediaId = getVideoId(mediaLink);
@@ -265,7 +284,6 @@ export default class MediaNotesPlugin extends Plugin {
 				autoplay = true;
 			}
 
-			const root = createRoot(div);
 			root.render(
 				<>
 					<AppProvider
@@ -289,8 +307,7 @@ export default class MediaNotesPlugin extends Plugin {
 			if (div) {
 				// unmount
 				const playerId = div.getAttribute("data-player-id") ?? "";
-				this.savePlayerTimestamp(playerId);
-				delete this.players[playerId];
+				this.removePlayer(playerId);
 				div.remove();
 			}
 		}
@@ -316,7 +333,6 @@ export default class MediaNotesPlugin extends Plugin {
 		]);
 		await this.loadSettings();
 
-		this.players = {};
 
 		this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
 			const view = leaf.view as MarkdownView;
@@ -535,12 +551,15 @@ export default class MediaNotesPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("layout-change", () => {
+				Object.entries(this.players).forEach(([id, player]) => {
+					if (!player.container.isConnected) this.removePlayer(id);
+				});
 				const markdownView =
 					this.app.workspace.getActiveViewOfType(MarkdownView);
 				if (!markdownView) {
 					// since we don't have the view anymore, trigger a save on all the players in state
 					Object.keys(this.players).forEach((id) => {
-						this.savePlayerTimestamp(id);
+						void this.savePlayerTimestamp(id);
 					});
 					return;
 				}
@@ -550,15 +569,10 @@ export default class MediaNotesPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.metadataCache.on("changed", (file) => {
-				const frontmatter =
-					this.app.metadataCache.getFileCache(file)?.frontmatter;
-				if (frontmatter && getMediaLinkFromFrontmatter(frontmatter)) {
-					// technically this may not be the same view as the file that changed
-					const markdownView =
-						this.app.workspace.getActiveViewOfType(MarkdownView);
-					if (!markdownView) return;
-					this.renderPlayerInView(markdownView);
-				}
+				this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+					const view = leaf.view as MarkdownView;
+					if (view.file === file) this.renderPlayerInView(view);
+				});
 			})
 		);
 
@@ -582,21 +596,8 @@ export default class MediaNotesPlugin extends Plugin {
 	}
 
 	onunload() {
-		// if there's an active view, save the timestamp (for development hot reloading)
-		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeView) return;
-		const container = activeView.containerEl;
-
-		// cleanup existing players, and save timestamp
-		const div = container.querySelector("." + mediaNotesContainerClass);
-		if (div) {
-			// unmount
-			const playerId = div.getAttribute("data-player-id") ?? "";
-			console.log("save timestamp before reloading!");
-			this.savePlayerTimestamp(playerId);
-			delete this.players[playerId];
-			div.remove();
-		}
+		Object.keys(this.players).forEach(this.removePlayer);
+		document.getElementById(mediaNotesReferrerMetaId)?.remove();
 	}
 
 	async loadSettings() {
@@ -605,190 +606,21 @@ export default class MediaNotesPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+		this.settings.mediaData = { ...this.settings.mediaData };
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		const snapshot = {
+			...this.settings,
+			mediaData: { ...this.settings.mediaData },
+		};
 		this.updatePlayerLayouts();
 		Object.values(this.players).forEach((player) => {
-			player.eventEmitter.emit("settingsUpdated", this.settings);
+			player.eventEmitter.emit("settingsUpdated", snapshot);
 		});
-	}
-}
-
-class SettingsTab extends PluginSettingTab {
-	plugin: MediaNotesPlugin;
-
-	constructor(app: App, plugin: MediaNotesPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName("Default split view")
-			.setDesc(
-				"Vertical or horizontal split view. Defaults to horizontal."
-			)
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOptions({
-						Vertical: "Vertical",
-						Horizontal: "Horizontal",
-					})
-					.setValue(this.plugin.settings.defaultSplitMode)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultSplitMode = value as
-							| "Vertical"
-							| "Horizontal";
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName("Rewind & fast forward seconds")
-			.setDesc("Number of seconds to rewind/fast forward")
-			.addSlider((slider) =>
-				slider
-					.setLimits(1, 60, 1)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.seekSeconds)
-					.onChange(async (value) => {
-						this.plugin.settings.seekSeconds = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Player height (%) in horizontal-split mode")
-			.setDesc(
-				"The height of the player as a percentage of the viewport in horizontal-split mode."
-			)
-			.addSlider((slider) =>
-				slider
-					.setLimits(5, 95, 5)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.verticalPlayerHeight)
-					.onChange(async (value) => {
-						this.plugin.settings.verticalPlayerHeight = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Player width (%) in vertical-split mode")
-			.setDesc(
-				"The width of the player as a percentage of the viewport in vertical-split mode."
-			)
-			.addSlider((slider) =>
-				slider
-					.setLimits(5, 95, 5)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.horizontalPlayerWidth)
-					.onChange(async (value) => {
-						this.plugin.settings.horizontalPlayerWidth = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Timestamp offset seconds")
-			.setDesc(
-				"Number of seconds in the past to offset by when inserting the timestamp."
-			)
-			.addSlider((slider) =>
-				slider
-					.setLimits(0, 60, 1)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.timestampOffsetSeconds)
-					.onChange(async (value) => {
-						this.plugin.settings.timestampOffsetSeconds = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Timestamp template")
-			.setDesc(
-				"Markdown template for inserted timestamp. Variables: {ts} is timestamp, {link} is a timestamped url, \\n is new line. Example: \\n- [{ts}]({link}) "
-			)
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.timestampTemplate)
-					.onChange(async (value) => {
-						this.plugin.settings.timestampTemplate = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Video player background")
-			.setDesc(
-				"Background color for the video player. e.g #dddddd or rgba(0, 0, 0, 0.8)"
-			)
-			.addColorPicker((color) =>
-				color
-					.setValue(this.plugin.settings.backgroundColor)
-					.onChange(async (value) => {
-						this.plugin.settings.backgroundColor = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Show progress bar")
-			.setDesc("Display a progress bar for the elapsed time")
-			.addToggle((val) =>
-				val
-					.setValue(this.plugin.settings.displayProgressBar)
-					.onChange(async (value) => {
-						this.plugin.settings.displayProgressBar = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Progress bar color")
-			.setDesc("Color of the progress bar below the video")
-			.addColorPicker((color) =>
-				color
-					.setValue(this.plugin.settings.progressBarColor)
-					.onChange(async (value) => {
-						this.plugin.settings.progressBarColor = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Always display current timestamp")
-			.setDesc(
-				"Always display the current timestamp. Default behavior is to only show it when seeking."
-			)
-			.addToggle((val) =>
-				val
-					.setValue(this.plugin.settings.displayTimestamp)
-					.onChange(async (value) => {
-						this.plugin.settings.displayTimestamp = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Pause media when inserting timestamp")
-			.setDesc(
-				"If enabled, the media will pause when a timestamp is inserted"
-			)
-			.addToggle((val) =>
-				val
-					.setValue(this.plugin.settings.pauseOnTimestampInsert)
-					.onChange(async (value) => {
-						this.plugin.settings.pauseOnTimestampInsert = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		const save = this.saveQueue.then(() => this.saveData(snapshot));
+		// Keep subsequent saves working even if one disk write fails.
+		this.saveQueue = save.catch(() => undefined);
+		await save;
 	}
 }

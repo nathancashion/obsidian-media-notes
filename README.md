@@ -79,6 +79,8 @@ Clicking links that have the timestamp format (`HH:MM:SS`) will jump the playbac
 
 ## Installation
 
+This fork requires Obsidian 1.13.0 or newer. Its settings are available in Obsidian's built-in settings search.
+
 <a href="https://obsidian.md/plugins?id=media-notes"><img src="https://img.shields.io/badge/Install_now-6c31e3?logo=obsidian"></a><br>
 Search "Media Notes" in the Obsidian Community Plugins library to find this plugin and add it.
 

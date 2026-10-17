@@ -78,6 +78,10 @@ export const MediaFrame: React.FC<{
 		const handleAsyncCode = async () => {
 			const state = event.data;
 			// if it was paused and now playing, set the current timestamp and making a polling setTimeout to check the player's current time and set the current timestamp every 1s
+			if (intervalRef.current !== null) {
+				window.clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
 			if (state === 1) {
 				updateTimestamp();
 				const interval = window.setInterval(() => {
@@ -87,8 +91,7 @@ export const MediaFrame: React.FC<{
 				setHideProgressBar(false);
 			}
 			// if it was playing and is now paused, remove the polling interval and set
-			if ((state === 2 || state === 0) && intervalRef.current) {
-				window.clearInterval(intervalRef.current);
+			if (state === 2 || state === 0) {
 				setHideProgressBar(true);
 			}
 		};

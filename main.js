@@ -25050,9 +25050,6 @@ var AppProvider = ({ children, settingsParam, eventEmitter }) => {
   const [settings, setSettings] = (0, import_react.useState)(
     settingsParam
   );
-  const updateSettings = (newSettings) => {
-    setSettings(newSettings);
-  };
   const [showTimestamp, setShowTimestamp] = (0, import_react.useState)(false);
   const [showSeekForward, setShowSeekForward] = (0, import_react.useState)(false);
   const [showSeekBackwards, setShowSeekBackwards] = (0, import_react.useState)(false);
@@ -25061,13 +25058,14 @@ var AppProvider = ({ children, settingsParam, eventEmitter }) => {
   const [showSpeed, setShowSpeed] = (0, import_react.useState)(false);
   const [currentSpeed, setCurrentSpeed] = (0, import_react.useState)(1);
   (0, import_react.useEffect)(() => {
-    eventEmitter.on(
-      "settingsUpdated",
-      (newSettings) => updateSettings(newSettings)
-    );
+    const updateSettings = (newSettings) => {
+      setSettings({ ...newSettings });
+    };
+    eventEmitter.on("settingsUpdated", updateSettings);
     let timestampDebounceTimer;
     let playPauseDebounceTimer;
     let speedDebounceTimer;
+    let actionTimer;
     const handleShowTimestamp = ({
       type,
       speed
@@ -25075,13 +25073,14 @@ var AppProvider = ({ children, settingsParam, eventEmitter }) => {
       clearTimeout(timestampDebounceTimer);
       clearTimeout(playPauseDebounceTimer);
       clearTimeout(speedDebounceTimer);
+      clearTimeout(actionTimer);
       setShowSeekForward(false);
       setShowTimestamp(false);
       setShowSeekBackwards(false);
-      setShowPause(false);
+      setShowPlay(false);
       setShowPause(false);
       setShowSpeed(false);
-      setTimeout(() => {
+      actionTimer = window.setTimeout(() => {
         setShowTimestamp(true);
         if (type === "seekForward") {
           setShowSeekForward(true);
@@ -25117,9 +25116,13 @@ var AppProvider = ({ children, settingsParam, eventEmitter }) => {
     eventEmitter.on("handleAction", handleShowTimestamp);
     return () => {
       eventEmitter.off("settingsUpdated", updateSettings);
+      eventEmitter.off("handleAction", handleShowTimestamp);
+      clearTimeout(actionTimer);
       clearTimeout(timestampDebounceTimer);
+      clearTimeout(playPauseDebounceTimer);
+      clearTimeout(speedDebounceTimer);
     };
-  }, []);
+  }, [eventEmitter]);
   return /* @__PURE__ */ React.createElement(
     AppContext.Provider,
     {
@@ -26283,6 +26286,10 @@ var MediaFrame = ({ mediaLink, ytRef, initSeconds, autoplay }) => {
   const onStateChange = (event) => {
     const handleAsyncCode = async () => {
       const state = event.data;
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       if (state === 1) {
         updateTimestamp();
         const interval = window.setInterval(() => {
@@ -26291,8 +26298,7 @@ var MediaFrame = ({ mediaLink, ytRef, initSeconds, autoplay }) => {
         intervalRef.current = interval;
         setHideProgressBar(false);
       }
-      if ((state === 2 || state === 0) && intervalRef.current) {
-        window.clearInterval(intervalRef.current);
+      if (state === 2 || state === 0) {
         setHideProgressBar(true);
       }
     };
@@ -26474,7 +26480,7 @@ var MediaFrame = ({ mediaLink, ytRef, initSeconds, autoplay }) => {
 };
 
 // src/main.tsx
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 var React7 = __toESM(require_react());
 
 // src/viewPlugin.ts
@@ -26542,6 +26548,90 @@ var EventEmitter = class {
   }
 };
 
+// src/settings.ts
+var import_obsidian = require("obsidian");
+var SettingsTab = class extends import_obsidian.PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+  async setControlValue(key, value) {
+    const definition = this.getSettingDefinitions().find(
+      (item) => {
+        var _a;
+        return "control" in item && ((_a = item.control) == null ? void 0 : _a.key) === key;
+      }
+    );
+    if (!definition)
+      return;
+    this.plugin.settings = { ...this.plugin.settings, [key]: value };
+    await this.plugin.saveSettings();
+  }
+  getSettingDefinitions() {
+    return [
+      {
+        name: "Default split view",
+        desc: "Vertical or horizontal split view. Defaults to horizontal.",
+        control: {
+          type: "dropdown",
+          key: "defaultSplitMode",
+          options: { Vertical: "Vertical", Horizontal: "Horizontal" }
+        }
+      },
+      {
+        name: "Rewind & fast forward seconds",
+        desc: "Number of seconds to rewind/fast forward.",
+        control: { type: "slider", key: "seekSeconds", min: 1, max: 60, step: 1 }
+      },
+      {
+        name: "Player height (%) in horizontal-split mode",
+        desc: "The height of the player as a percentage of the viewport in horizontal-split mode.",
+        control: { type: "slider", key: "verticalPlayerHeight", min: 5, max: 95, step: 5 }
+      },
+      {
+        name: "Player width (%) in vertical-split mode",
+        desc: "The width of the player as a percentage of the viewport in vertical-split mode.",
+        control: { type: "slider", key: "horizontalPlayerWidth", min: 5, max: 95, step: 5 }
+      },
+      {
+        name: "Timestamp offset seconds",
+        desc: "Number of seconds in the past to offset by when inserting the timestamp.",
+        control: { type: "slider", key: "timestampOffsetSeconds", min: 0, max: 60, step: 1 }
+      },
+      {
+        name: "Timestamp template",
+        desc: "Markdown template for inserted timestamps. Variables: {ts} is the timestamp, {link} is a timestamped URL, and \\n is a new line.",
+        control: { type: "textarea", key: "timestampTemplate", rows: 3 }
+      },
+      {
+        name: "Video player background",
+        desc: "Background color for the video player.",
+        control: { type: "color", key: "backgroundColor" }
+      },
+      {
+        name: "Show progress bar",
+        desc: "Display a progress bar for the elapsed time.",
+        control: { type: "toggle", key: "displayProgressBar" }
+      },
+      {
+        name: "Progress bar color",
+        desc: "Color of the progress bar below the video.",
+        control: { type: "color", key: "progressBarColor" }
+      },
+      {
+        name: "Always display current timestamp",
+        desc: "Always display the current timestamp. Otherwise, only show it when seeking.",
+        control: { type: "toggle", key: "displayTimestamp" }
+      },
+      {
+        name: "Pause media when inserting timestamp",
+        desc: "If enabled, the media will pause when a timestamp is inserted.",
+        control: { type: "toggle", key: "pauseOnTimestampInsert" }
+      }
+    ];
+  }
+};
+
 // src/main.tsx
 var DEFAULT_SETTINGS = {
   seekSeconds: 10,
@@ -26605,7 +26695,7 @@ var parseRawFrontmatter = (rawFrontmatter) => {
   if (typeof rawFrontmatter !== "string" || !rawFrontmatter.trim()) {
     return {};
   }
-  return (_a = (0, import_obsidian.parseYaml)(rawFrontmatter)) != null ? _a : {};
+  return (_a = (0, import_obsidian2.parseYaml)(rawFrontmatter)) != null ? _a : {};
 };
 var getTimestampParam = (mediaLink) => {
   try {
@@ -26614,9 +26704,11 @@ var getTimestampParam = (mediaLink) => {
     return null;
   }
 };
-var MediaNotesPlugin = class extends import_obsidian.Plugin {
+var MediaNotesPlugin = class extends import_obsidian2.Plugin {
   constructor() {
     super(...arguments);
+    this.saveQueue = Promise.resolve();
+    this.players = {};
     this.getActiveViewYoutubePlayer = (view) => {
       var _a;
       if (!view)
@@ -26656,23 +26748,36 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
       });
     };
     // saves the timestamp of the player into settings, by media link
-    this.savePlayerTimestamp = (playerId) => {
+    this.savePlayerTimestamp = async (playerId) => {
       var _a, _b;
       const player = this.players[playerId];
       if (!player)
         return;
-      (_b = (_a = player.ytRef.current) == null ? void 0 : _a.internalPlayer) == null ? void 0 : _b.getCurrentTime().then((timestamp) => {
+      try {
+        const timestamp = await ((_b = (_a = player.ytRef.current) == null ? void 0 : _a.internalPlayer) == null ? void 0 : _b.getCurrentTime());
         const mediaId = getVideoId(player.mediaLink);
-        if (!mediaId)
+        if (!mediaId || timestamp === void 0 || !Number.isFinite(timestamp)) {
           return;
+        }
         this.settings.mediaData[mediaId] = {
           mediaLink: player.mediaLink,
           lastUpdated: new Date().toISOString(),
           lastTimestampSeconds: timestamp
         };
-        this.saveSettings();
-        this.loadSettings();
-      });
+        await this.saveSettings();
+      } catch (error) {
+        console.error("Media Notes AI failed to save playback position", error);
+      }
+    };
+    this.removePlayer = (playerId) => {
+      const player = this.players[playerId];
+      if (!player)
+        return;
+      void this.savePlayerTimestamp(playerId);
+      player.root.unmount();
+      player.viewContainer.classList.remove(mediaParentContainerVerticalClass);
+      player.container.remove();
+      delete this.players[playerId];
     };
     this.renderPlayerInView = (markdownView) => {
       var _a, _b, _c, _d, _e;
@@ -26689,9 +26794,8 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
           if (player && player.mediaLink === getMediaLinkFromFrontmatter(frontmatter)) {
             return;
           }
+          this.removePlayer(playerId);
           existingPlayerComponent.remove();
-          this.savePlayerTimestamp(playerId);
-          delete this.players[playerId];
         }
         const div = document.createElement("div");
         const uniqueId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -26708,10 +26812,14 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         ensureYouTubeReferrerPolicy();
         const ytRef = React7.createRef();
         const eventEmitter = new EventEmitter();
+        const root = (0, import_client.createRoot)(div);
         this.players[uniqueId] = {
           ytRef,
           mediaLink,
-          eventEmitter
+          eventEmitter,
+          root,
+          container: div,
+          viewContainer: container
         };
         const mediaId = getVideoId(mediaLink);
         const mediaData = mediaId && this.settings.mediaData[mediaId] || this.settings.mediaData[mediaLink];
@@ -26721,7 +26829,6 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         if (mediaLinkTs && Number(initSeconds) === Number(mediaLinkTs)) {
           autoplay = true;
         }
-        const root = (0, import_client.createRoot)(div);
         root.render(
           /* @__PURE__ */ React7.createElement(React7.Fragment, null, /* @__PURE__ */ React7.createElement(
             AppProvider,
@@ -26745,15 +26852,14 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
         const div = container.querySelector("." + mediaNotesContainerClass);
         if (div) {
           const playerId = (_e = div.getAttribute("data-player-id")) != null ? _e : "";
-          this.savePlayerTimestamp(playerId);
-          delete this.players[playerId];
+          this.removePlayer(playerId);
           div.remove();
         }
       }
     };
     this.handleTimestampClick = (timestamp) => {
       var _a, _b;
-      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
+      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian2.MarkdownView);
       if (!activeView)
         return;
       const player = this.getActiveViewYoutubePlayer(activeView);
@@ -26772,7 +26878,6 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
       createClickHandlerPlugin(this.handleTimestampClick)
     ]);
     await this.loadSettings();
-    this.players = {};
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       var _a;
       const view = leaf.view;
@@ -26972,10 +27077,14 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
     this.addSettingTab(new SettingsTab(this.app, this));
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        const markdownView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
+        Object.entries(this.players).forEach(([id, player]) => {
+          if (!player.container.isConnected)
+            this.removePlayer(id);
+        });
+        const markdownView = this.app.workspace.getActiveViewOfType(import_obsidian2.MarkdownView);
         if (!markdownView) {
           Object.keys(this.players).forEach((id) => {
-            this.savePlayerTimestamp(id);
+            void this.savePlayerTimestamp(id);
           });
           return;
         }
@@ -26984,31 +27093,18 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
     );
     this.registerEvent(
       this.app.metadataCache.on("changed", (file) => {
-        var _a;
-        const frontmatter = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
-        if (frontmatter && getMediaLinkFromFrontmatter(frontmatter)) {
-          const markdownView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
-          if (!markdownView)
-            return;
-          this.renderPlayerInView(markdownView);
-        }
+        this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+          const view = leaf.view;
+          if (view.file === file)
+            this.renderPlayerInView(view);
+        });
       })
     );
   }
   onunload() {
     var _a;
-    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
-    if (!activeView)
-      return;
-    const container = activeView.containerEl;
-    const div = container.querySelector("." + mediaNotesContainerClass);
-    if (div) {
-      const playerId = (_a = div.getAttribute("data-player-id")) != null ? _a : "";
-      console.log("save timestamp before reloading!");
-      this.savePlayerTimestamp(playerId);
-      delete this.players[playerId];
-      div.remove();
-    }
+    Object.keys(this.players).forEach(this.removePlayer);
+    (_a = document.getElementById(mediaNotesReferrerMetaId)) == null ? void 0 : _a.remove();
   }
   async loadSettings() {
     this.settings = Object.assign(
@@ -27016,108 +27112,20 @@ var MediaNotesPlugin = class extends import_obsidian.Plugin {
       DEFAULT_SETTINGS,
       await this.loadData()
     );
+    this.settings.mediaData = { ...this.settings.mediaData };
   }
   async saveSettings() {
-    await this.saveData(this.settings);
+    const snapshot = {
+      ...this.settings,
+      mediaData: { ...this.settings.mediaData }
+    };
     this.updatePlayerLayouts();
     Object.values(this.players).forEach((player) => {
-      player.eventEmitter.emit("settingsUpdated", this.settings);
+      player.eventEmitter.emit("settingsUpdated", snapshot);
     });
-  }
-};
-var SettingsTab = class extends import_obsidian.PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Default split view").setDesc(
-      "Vertical or horizontal split view. Defaults to horizontal."
-    ).addDropdown((dropdown) => {
-      dropdown.addOptions({
-        Vertical: "Vertical",
-        Horizontal: "Horizontal"
-      }).setValue(this.plugin.settings.defaultSplitMode).onChange(async (value) => {
-        this.plugin.settings.defaultSplitMode = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian.Setting(containerEl).setName("Rewind & fast forward seconds").setDesc("Number of seconds to rewind/fast forward").addSlider(
-      (slider) => slider.setLimits(1, 60, 1).setDynamicTooltip().setValue(this.plugin.settings.seekSeconds).onChange(async (value) => {
-        this.plugin.settings.seekSeconds = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Player height (%) in horizontal-split mode").setDesc(
-      "The height of the player as a percentage of the viewport in horizontal-split mode."
-    ).addSlider(
-      (slider) => slider.setLimits(5, 95, 5).setDynamicTooltip().setValue(this.plugin.settings.verticalPlayerHeight).onChange(async (value) => {
-        this.plugin.settings.verticalPlayerHeight = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Player width (%) in vertical-split mode").setDesc(
-      "The width of the player as a percentage of the viewport in vertical-split mode."
-    ).addSlider(
-      (slider) => slider.setLimits(5, 95, 5).setDynamicTooltip().setValue(this.plugin.settings.horizontalPlayerWidth).onChange(async (value) => {
-        this.plugin.settings.horizontalPlayerWidth = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Timestamp offset seconds").setDesc(
-      "Number of seconds in the past to offset by when inserting the timestamp."
-    ).addSlider(
-      (slider) => slider.setLimits(0, 60, 1).setDynamicTooltip().setValue(this.plugin.settings.timestampOffsetSeconds).onChange(async (value) => {
-        this.plugin.settings.timestampOffsetSeconds = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Timestamp template").setDesc(
-      "Markdown template for inserted timestamp. Variables: {ts} is timestamp, {link} is a timestamped url, \\n is new line. Example: \\n- [{ts}]({link}) "
-    ).addText(
-      (text) => text.setValue(this.plugin.settings.timestampTemplate).onChange(async (value) => {
-        this.plugin.settings.timestampTemplate = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Video player background").setDesc(
-      "Background color for the video player. e.g #dddddd or rgba(0, 0, 0, 0.8)"
-    ).addColorPicker(
-      (color) => color.setValue(this.plugin.settings.backgroundColor).onChange(async (value) => {
-        this.plugin.settings.backgroundColor = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Show progress bar").setDesc("Display a progress bar for the elapsed time").addToggle(
-      (val) => val.setValue(this.plugin.settings.displayProgressBar).onChange(async (value) => {
-        this.plugin.settings.displayProgressBar = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Progress bar color").setDesc("Color of the progress bar below the video").addColorPicker(
-      (color) => color.setValue(this.plugin.settings.progressBarColor).onChange(async (value) => {
-        this.plugin.settings.progressBarColor = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Always display current timestamp").setDesc(
-      "Always display the current timestamp. Default behavior is to only show it when seeking."
-    ).addToggle(
-      (val) => val.setValue(this.plugin.settings.displayTimestamp).onChange(async (value) => {
-        this.plugin.settings.displayTimestamp = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Pause media when inserting timestamp").setDesc(
-      "If enabled, the media will pause when a timestamp is inserted"
-    ).addToggle(
-      (val) => val.setValue(this.plugin.settings.pauseOnTimestampInsert).onChange(async (value) => {
-        this.plugin.settings.pauseOnTimestampInsert = value;
-        await this.plugin.saveSettings();
-      })
-    );
+    const save = this.saveQueue.then(() => this.saveData(snapshot));
+    this.saveQueue = save.catch(() => void 0);
+    await save;
   }
 };
 /*! Bundled license information:
