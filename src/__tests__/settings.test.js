@@ -5,7 +5,11 @@ jest.mock("obsidian", () => ({
 		constructor(app) { this.app = app; }
 	},
 	PluginSettingTab: class {
-		constructor(app, plugin) { this.app = app; this.plugin = plugin; }
+		constructor(app, plugin) {
+			this.app = app;
+			this.plugin = plugin;
+			this.containerEl = document.createElement("div");
+		}
 	},
 }), { virtual: true });
 jest.mock("../viewPlugin", () => ({ createClickHandlerPlugin: jest.fn() }));
@@ -16,6 +20,8 @@ jest.mock("react-dom/client", () => ({
 const YouTubeNotesPlugin = require("../main").default;
 const { SettingsTab } = require("../settings");
 const { EventEmitter } = require("../event-emitter");
+const { readFileSync } = require("fs");
+const path = require("path");
 
 const createPlugin = async () => {
 	const plugin = new YouTubeNotesPlugin({
@@ -65,6 +71,49 @@ test("all 11 preferences have searchable definitions and playback history is pri
 	expect(definitions.find((item) => item.control.key === "seekSeconds").control).toMatchObject({
 		min: 1, max: 60, step: 1,
 	});
+});
+
+test("both color pickers remain visible when broad settings CSS hides native color inputs", async () => {
+	const plugin = await createPlugin();
+	const tab = new SettingsTab(plugin.app, plugin);
+	expect(tab.containerEl.classList.contains("youtube-notes-settings")).toBe(true);
+	const hiddenStyle = document.createElement("style");
+	hiddenStyle.textContent = '.mod-settings .setting-item-control input[type="color"] { display: none; }';
+	const pluginStyle = document.createElement("style");
+	pluginStyle.textContent = readFileSync(path.resolve(__dirname, "../../styles.css"), "utf8");
+	document.head.append(hiddenStyle, pluginStyle);
+	const settings = document.createElement("div");
+	settings.className = "mod-settings";
+	settings.append(tab.containerEl);
+	document.body.append(settings);
+	const makeColorInput = (container) => {
+		const control = document.createElement("div");
+		control.className = "setting-item-control";
+		const input = document.createElement("input");
+		input.type = "color";
+		control.append(input);
+		container.append(control);
+		return input;
+	};
+	try {
+		const colorDefinitions = tab.getSettingDefinitions().filter(
+			(item) => item.control.type === "color"
+		);
+		expect(colorDefinitions.map((item) => item.control.key)).toEqual([
+			"backgroundColor", "progressBarColor",
+		]);
+		colorDefinitions.forEach(() => {
+			const input = makeColorInput(tab.containerEl);
+			expect(input.ownerDocument.defaultView.getComputedStyle(input).display).toBe("inline-block");
+		});
+		const otherTab = document.createElement("div");
+		settings.append(otherTab);
+		const unrelated = makeColorInput(otherTab);
+		expect(unrelated.ownerDocument.defaultView.getComputedStyle(unrelated).display).toBe("none");
+	} finally {
+		hiddenStyle.remove();
+		pluginStyle.remove();
+	}
 });
 
 test("declarative edits persist through the live-update path without losing history", async () => {

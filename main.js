@@ -26554,6 +26554,7 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
+    this.containerEl.classList.add("youtube-notes-settings");
   }
   async setControlValue(key, value) {
     const definition = this.getSettingDefinitions().find(

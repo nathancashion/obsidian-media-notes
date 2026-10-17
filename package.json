@@ -1,6 +1,6 @@
 {
 	"name": "youtube-notes",
-	"version": "1.3.8",
+	"version": "1.3.9",
 	"description": "Take notes alongside YouTube videos with playback controls and clickable timestamps.",
 	"main": "main.js",
 	"scripts": {

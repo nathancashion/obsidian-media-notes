@@ -7,6 +7,11 @@ If your plugin does not need CSS, delete this file.
 
 */
 
+/* Some settings styles hide native color inputs; override only in this tab. */
+.mod-settings .youtube-notes-settings .setting-item-control input[type="color"] {
+	display: inline-block;
+}
+
 .media-notes-container {
 	background: rgba(0, 0, 0, 0.1);
 	/* height: 30%; */

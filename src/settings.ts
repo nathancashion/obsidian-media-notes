@@ -10,6 +10,7 @@ export class SettingsTab extends PluginSettingTab {
 	constructor(app: App, plugin: YouTubeNotesPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.containerEl.classList.add("youtube-notes-settings");
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
